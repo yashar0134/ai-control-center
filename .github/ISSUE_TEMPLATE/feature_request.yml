@@ -1,0 +1,68 @@
+name: Feature request
+description: Propose an improvement or new capability
+title: "[feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before proposing a new data source: this project only uses **official, documented
+        interfaces** and collects **metadata only** — proposals that require scraping or
+        content-payload collection will be declined (see PROJECT_RULES.md).
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve? Who has it?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: What should the product do afterwards? Describe behavior, not implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Affected domain
+      multiple: true
+      options:
+        - dashboard / overview
+        - providers & connections
+        - collectors
+        - usage / activity
+        - costs
+        - system monitoring
+        - settings
+        - notifications (future)
+        - documentation
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy / security implications
+      description: |
+        Does this touch new data? State what would be collected, from which official
+        interface, and what must never be collected.
+    validations:
+      required: true
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Are you willing to contribute this?
+      options:
+        - Yes, I can open a PR after discussion
+        - Maybe, with guidance
+        - No, proposal only
+    validations:
+      required: true

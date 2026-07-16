@@ -1,0 +1,149 @@
+// AI Control Center — local SQLite schema.
+// SQLite has no native enums; constrained string values are validated with Zod
+// at the application boundary (see src/server/domain/types.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // Local file next to this schema. No environment variable needed for local-first use.
+  url      = "file:./dev.db"
+}
+
+// A company or service (OpenAI, Anthropic, Google, ...).
+model Provider {
+  id          String       @id // slug, e.g. "openai"
+  name        String
+  category    String // "ai-model-provider" | "local-tool" | ...
+  websiteUrl  String?
+  createdAt   DateTime     @default(now())
+  connections Connection[]
+}
+
+// A specific product connection under a provider
+// (e.g. "ChatGPT subscription" and "OpenAI API" are two connections of provider "openai").
+model Connection {
+  id               String   @id // slug, e.g. "openai-api"
+  providerId       String
+  provider         Provider @relation(fields: [providerId], references: [id])
+  name             String
+  kind             String // "subscription" | "api" | "local-tool"
+  status           String // "demo" | "manual" | "not-connected" | "planned" | "unavailable" | "unsupported"
+  collectionMethod String // "demo-collector" | "manual-entry" | "none" | "planned-official-api" | "planned-local-file"
+  privacyNotes     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  capabilities    Capability[]
+  usageEvents     UsageEvent[]
+  costRecords     CostRecord[]
+  healthSnapshots HealthSnapshot[]
+  collectorRuns   CollectorRun[]
+}
+
+// Truthful declaration of what a connection supports.
+model Capability {
+  id           Int        @id @default(autoincrement())
+  connectionId String
+  connection   Connection @relation(fields: [connectionId], references: [id])
+  capability   String // "usage" | "model-attribution" | "input-tokens" | "output-tokens" | "cost" | "quota" | "reset-time" | "health" | "actions"
+  state        String // "available" | "unavailable" | "unsupported" | "manual" | "estimated" | "planned"
+  note         String?
+
+  @@unique([connectionId, capability])
+}
+
+// Normalized model-usage / provider-activity event.
+// Token fields are NULL when unknown — never zero.
+model UsageEvent {
+  id           String     @id @default(cuid())
+  connectionId String
+  connection   Connection @relation(fields: [connectionId], references: [id])
+  dedupeKey    String     @unique // idempotency guard for collectors
+  occurredAt   DateTime
+  eventType    String // "chat" | "completion" | "coding-session" | ...
+  model        String? // NULL = model unknown
+  status       String // "ok" | "error" | "unknown"
+  inputTokens  Int? // NULL = unknown
+  outputTokens Int? // NULL = unknown
+  totalTokens  Int? // NULL = unknown
+  costAmount   Float? // NULL = unknown; display currency
+  costKind     String? // "actual" | "estimated"
+  provenance   String // "live" | "locally-observed" | "manual" | "estimated" | "demo" | "stale"
+  createdAt    DateTime   @default(now())
+
+  @@index([connectionId, occurredAt])
+  @@index([occurredAt])
+}
+
+// A monetary record for a period (subscription fee, daily API estimate, ...).
+model CostRecord {
+  id           String     @id @default(cuid())
+  connectionId String
+  connection   Connection @relation(fields: [connectionId], references: [id])
+  dedupeKey    String     @unique
+  periodStart  DateTime
+  periodEnd    DateTime
+  amount       Float
+  currency     String // ISO code of display currency at time of record
+  kind         String // "actual" | "estimated" | "manual" | "imported"
+  provenance   String
+  description  String?
+  createdAt    DateTime   @default(now())
+
+  @@index([connectionId, periodStart])
+  @@index([periodStart])
+}
+
+// Point-in-time status of a connection, collector, or the local machine.
+model HealthSnapshot {
+  id           String      @id @default(cuid())
+  subjectType  String // "connection" | "collector" | "machine"
+  subjectId    String // connection id, collector id, or "local-machine"
+  connectionId String? // set when subjectType = "connection"
+  connection   Connection? @relation(fields: [connectionId], references: [id])
+  status       String // "ok" | "degraded" | "down" | "unknown"
+  provenance   String
+  metricsJson  String? // safe, non-sensitive metrics only (JSON)
+  capturedAt   DateTime
+  createdAt    DateTime    @default(now())
+
+  @@index([subjectType, subjectId, capturedAt])
+}
+
+// Key/value application settings (validated with Zod in settings service).
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// One execution of a collector.
+model CollectorRun {
+  id                  String      @id @default(cuid())
+  collectorId         String
+  connectionId        String?
+  connection          Connection? @relation(fields: [connectionId], references: [id])
+  startedAt           DateTime
+  finishedAt          DateTime?
+  status              String // "success" | "failed"
+  observationsWritten Int         @default(0)
+  duplicatesSkipped   Int         @default(0)
+  message             String?
+
+  @@index([collectorId, startedAt])
+}
+
+// Safe audit trail of application actions. Never stores secrets or content payloads.
+model AuditEvent {
+  id          String   @id @default(cuid())
+  occurredAt  DateTime @default(now())
+  actor       String // "user" | "system"
+  action      String // e.g. "collector.run", "settings.update"
+  subject     String? // e.g. collector id or setting key
+  detailsJson String? // safe metadata only (JSON)
+
+  @@index([occurredAt])
+}

@@ -1,0 +1,85 @@
+name: Bug report
+description: Report a reproducible problem in AI Control Center
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please fill this in as completely as you can.
+        **Remove all secrets, API keys, tokens, personal file paths, and private data before submitting.**
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: The Costs page shows ... when ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `npm run dev`
+        2. Open /costs
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: e.g. Windows 11, macOS 15, Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version (`node --version`)
+      placeholder: v24.x.x
+    validations:
+      required: true
+  - type: input
+    id: npm
+    attributes:
+      label: npm version (`npm --version`)
+      placeholder: "11.x.x"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version or commit (`git rev-parse --short HEAD`)
+      placeholder: e.g. 0.1.0 or abc1234
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or error output
+      description: |
+        Paste terminal or browser-console output. ⚠️ Double-check that no secrets,
+        tokens, usernames, or personal file paths are included — redact them.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I confirm this report contains no secrets, API keys, tokens, personal paths, or private data.
+          required: true

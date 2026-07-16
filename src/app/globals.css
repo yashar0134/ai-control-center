@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — dark-first, neutral slate palette with a restrained
+ * emerald accent. Light theme is an explicit override via [data-theme].
+ */
+:root {
+  --background: #0a0f1a;
+  --surface: #0f1726;
+  --surface-raised: #16213a;
+  --border: #223050;
+  --border-strong: #33436b;
+  --foreground: #e6ebf4;
+  --muted-foreground: #8fa1bd;
+  --faint-foreground: #64748b;
+  --accent: #34d399;
+  --accent-foreground: #052e1e;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+  --demo: #c084fc;
+  --ring: #34d399;
+}
+
+[data-theme="light"] {
+  --background: #f4f6fa;
+  --surface: #ffffff;
+  --surface-raised: #f1f5f9;
+  --border: #dde3ed;
+  --border-strong: #b9c4d6;
+  --foreground: #101828;
+  --muted-foreground: #51617a;
+  --faint-foreground: #7d8ba1;
+  --accent: #047857;
+  --accent-foreground: #ffffff;
+  --success: #15803d;
+  --warning: #a16207;
+  --danger: #b91c1c;
+  --info: #1d4ed8;
+  --demo: #7e22ce;
+  --ring: #047857;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint-foreground: var(--faint-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-demo: var(--demo);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Visible focus for keyboard users everywhere. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Numeric data should not jitter between rows. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
