@@ -1,5 +1,9 @@
 import { db } from "@/server/db/client";
 import {
+  systemMetricsSchema,
+  type SystemMetrics,
+} from "@/server/collectors/system/metrics";
+import {
   aggregateCosts,
   costsByDay,
   percentChange,
@@ -223,23 +227,42 @@ export async function getCostsPageData(now = new Date()) {
 }
 
 export async function getSystemPageData() {
-  const [machineSnapshot, lastRun, recentRuns] = await Promise.all([
+  const [realSnapshot, demoSnapshot, lastSystemRun, recentRuns] = await Promise.all([
     db.healthSnapshot.findFirst({
-      where: { subjectType: "machine" },
+      where: { subjectType: "machine", provenance: "locally-observed" },
       orderBy: { capturedAt: "desc" },
     }),
-    db.collectorRun.findFirst({ orderBy: { startedAt: "desc" } }),
+    db.healthSnapshot.findFirst({
+      where: { subjectType: "machine", provenance: "demo" },
+      orderBy: { capturedAt: "desc" },
+    }),
+    db.collectorRun.findFirst({
+      where: { collectorId: "windows-system" },
+      orderBy: { startedAt: "desc" },
+    }),
     db.collectorRun.findMany({ orderBy: { startedAt: "desc" }, take: 10 }),
   ]);
 
-  let metrics: Record<string, number | string> | null = null;
-  if (machineSnapshot?.metricsJson) {
+  // Real metrics are validated against the typed schema; anything that does
+  // not parse is treated as absent rather than displayed.
+  let realMetrics: SystemMetrics | null = null;
+  if (realSnapshot?.metricsJson) {
     try {
-      metrics = JSON.parse(machineSnapshot.metricsJson);
+      const parsed = systemMetricsSchema.safeParse(JSON.parse(realSnapshot.metricsJson));
+      realMetrics = parsed.success ? parsed.data : null;
     } catch {
-      metrics = null;
+      realMetrics = null;
     }
   }
 
-  return { machineSnapshot, metrics, lastRun, recentRuns };
+  let demoMetrics: Record<string, number | string> | null = null;
+  if (demoSnapshot?.metricsJson) {
+    try {
+      demoMetrics = JSON.parse(demoSnapshot.metricsJson);
+    } catch {
+      demoMetrics = null;
+    }
+  }
+
+  return { realSnapshot, realMetrics, demoSnapshot, demoMetrics, lastSystemRun, recentRuns };
 }

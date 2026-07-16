@@ -1,12 +1,13 @@
 import type { Collector } from "./contracts";
 import { demoCollector } from "./demo/demo-collector";
+import { windowsSystemCollector } from "./system/windows-system-collector";
 
 /**
- * Typed registry of built-in collectors. Future collectors (Windows system
- * monitor, Claude Code local metadata, official API adapters) register here
- * at compile time. No runtime plugin loading.
+ * Typed registry of built-in collectors. Future collectors (Claude Code local
+ * metadata, official API adapters) register here at compile time. No runtime
+ * plugin loading.
  */
-const COLLECTORS: readonly Collector[] = [demoCollector];
+const COLLECTORS: readonly Collector[] = [demoCollector, windowsSystemCollector];
 
 export function listCollectors(): readonly Collector[] {
   return COLLECTORS;

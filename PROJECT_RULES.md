@@ -29,6 +29,7 @@ Compact, operational rules for every contributor and every AI coding session. If
 14. No secrets in the repository — no keys, `.env` values, tokens, or local databases (`prisma/dev.db` stays git-ignored).
 15. Server actions validate all input with Zod; errors surface as friendly messages, never stack traces or internals.
 16. Tests never call real provider APIs.
+16a. Collectors that invoke OS commands use a fixed internal command with argument arrays (never interpolated or user-supplied text), non-interactive flags, a timeout, bounded output, and Zod-validated structured output; raw command output is parsed and discarded — never persisted, logged, or shown. Failures map to fixed safe categories. No collector may require administrator/root privileges.
 
 ## UI / UX
 

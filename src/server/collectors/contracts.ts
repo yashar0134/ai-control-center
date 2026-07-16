@@ -114,6 +114,12 @@ export interface Collector {
   method: CollectorMethod;
   /** Connection ids this collector produces observations for. */
   connectionIds: string[];
+  /** Platforms with a real implementation; omitted = platform-independent. */
+  platforms?: NodeJS.Platform[];
+  /** Whether elevated/administrator privileges are required (must stay false). */
+  requiresElevation?: boolean;
+  /** Truthful implementation status. */
+  status?: "implemented" | "planned";
   /** Truthful statement of what this collector reads and never reads. */
   privacyNotes: string;
   collect(ctx: CollectorContext): Promise<CollectorResult>;

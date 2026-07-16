@@ -50,6 +50,19 @@ providers · usage · costs · activity · collectors · system-monitoring · se
 
 Quota observations are defined in the contracts but intentionally have no storage yet — no legitimate quota source exists in this milestone.
 
+## Windows system collector (Phase 2)
+
+`collectors/system/` implements the first real collector behind a strict platform boundary:
+
+- **Host abstraction** (`SystemHost`): all OS access (os.cpus/totalmem/freemem, `fs.statfs`, the PowerShell probe) goes through one injectable interface; tests use fakes and never touch real hardware or PowerShell.
+- **Measurements**: CPU % from two bounded `os.cpus()` time-delta samples (shared ~700 ms window, not a load average); memory from `os.totalmem/freemem`; disk from `fs.statfs` on the app's volume root (capacity API only — no file enumeration); network from one fixed, non-interactive `powershell.exe` invocation that samples cumulative per-interface byte counters twice and reports the measured interval.
+- **Safe command boundary**: fixed script string, argument-array invocation (no shell concatenation, nothing user-controlled), `-NoProfile -NonInteractive`, 5 s process timeout, 1 MiB output cap, structured JSON parsed and validated with Zod, raw output discarded. Interface names are used transiently to pair samples and exclude loopback/tunnel pseudo-interfaces, then dropped — never persisted or displayed.
+- **Errors and timeouts**: every failure maps to a fixed safe category (`unsupported-platform`, `timeout`, `command-unavailable`, `malformed-output`, `permission-denied`, `metric-unavailable`, `internal-error`) via `collectors/errors.ts`; the whole run has an 8 s hard bound. Only the category and a hand-written message reach CollectorRun, AuditEvent, or the UI.
+- **Persistence**: the same pipeline as every collector — one HealthSnapshot (`subjectType: machine`, provenance `locally-observed`, metrics validated by `systemMetricsSchema`, unavailable metrics absent, never 0), a CollectorRun, and a safe AuditEvent. No schema migration was needed.
+- **Duplicate protection**: an in-process `RunGate` (per-collector in-flight lock + 5 s cooldown) guards all collector runs — honest for a local single-process app; not a distributed lock.
+- **Platform abstraction**: non-Windows platforms get a truthful `unsupported-platform` result and an explanatory UI state; macOS/Linux collectors can later implement the same `SystemHost` boundary separately.
+- **Units**: bytes and bytes/second in storage; GiB (1024³) and Mbps (10⁶ bits/s) in the UI; snapshots older than 2 minutes are marked stale (`domain/freshness.ts`).
+
 ## Provenance model
 
 Every usage, cost, and health value stores one of:

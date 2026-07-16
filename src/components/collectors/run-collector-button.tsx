@@ -8,10 +8,20 @@ import {
 } from "@/server/actions/collector-actions";
 
 /**
- * Clearly-labeled trigger for the demo collector. The generated data is
- * synthetic and marked with provenance "demo" everywhere it appears.
+ * Trigger for a collector run via the validated server action. Labels default
+ * to the demo collector's wording; real collectors pass their own labels.
+ * The pending state disables the button, preventing double-click duplicates
+ * (the server-side run gate is the authoritative guard).
  */
-export function RunCollectorButton({ collectorId }: { collectorId: string }) {
+export function RunCollectorButton({
+  collectorId,
+  label = "Run demo collector",
+  pendingLabel = "Generating demo data…",
+}: {
+  collectorId: string;
+  label?: string;
+  pendingLabel?: string;
+}) {
   const [state, formAction, isPending] = useActionState<CollectorActionState, FormData>(
     runCollectorAction,
     null,
@@ -30,7 +40,7 @@ export function RunCollectorButton({ collectorId }: { collectorId: string }) {
         ) : (
           <PlayCircle size={15} aria-hidden="true" />
         )}
-        {isPending ? "Generating demo data…" : "Run demo collector"}
+        {isPending ? pendingLabel : label}
       </button>
       <div role="status" aria-live="polite">
         {state && (

@@ -6,9 +6,9 @@ Compact phases. Each phase ships independently; no phase starts before the previ
 - **Entry:** empty repository, Node.js installed.
 - **Exit:** all routes render from SQLite; provider/connection/capability/provenance models live; demo collector runs end-to-end with duplicate protection, collector runs, and audit events; settings persist; tests/lint/typecheck/build pass.
 
-## Phase 2 — Real local Windows system collector
-- **Entry:** Phase 1 complete.
-- **Exit:** a collector reads unprivileged OS counters (CPU, memory, disk, network) on a schedule or manual trigger; snapshots carry provenance `locally-observed`; System page shows real + demo clearly distinguished; collection respects the Settings toggle; unit tests for the collector's normalization.
+## Phase 2 — Real local Windows system collector ✅
+- **Entry:** Phase 1 complete. ✅
+- **Exit:** a collector reads unprivileged OS counters (CPU, memory, disk, network) on a manual trigger ✅; snapshots carry provenance `locally-observed` ✅; System page shows real + demo clearly distinguished ✅; collection respects the Settings toggle ✅; unit tests for the collector's normalization ✅. (Scheduled background sampling was intentionally not included — collection is manual per click.)
 
 ## Phase 3 — Claude Code local metadata collector
 - **Entry:** Phase 2 collector pattern proven.

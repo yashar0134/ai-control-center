@@ -13,7 +13,7 @@
 - **Connection details** — capabilities, provenance, recent usage and costs, collector status, and privacy notes per connection, fully database-driven
 - **Activity** — normalized usage events with URL-based filters (connection, model, status, provenance)
 - **Costs** — monthly totals split by actual / estimated / manual, provider breakdown, 30-day trend, records table
-- **System** — demo machine snapshots (CPU, memory, disk, network) and collector-run history; a real Windows collector is the next phase
+- **System** — **real Windows machine metrics on demand**: click "Collect now" for a one-shot measurement of CPU utilization, memory, disk capacity, and network throughput, labeled `locally-observed` with capture time and stale marking (older than 2 minutes). Windows only; other platforms see a truthful unsupported state. No administrator rights needed. Demo snapshots remain available in a separately labeled section
 - **Settings** — display currency, week start, collection toggle, retention, anonymized-metadata preference, dark/light theme — persisted locally in SQLite
 - **Demo collector** — a working end-to-end vertical slice: collect → validate → de-duplicate → persist → audit → UI, idempotent by design
 
@@ -33,8 +33,8 @@ _Screenshots have not been captured yet — see [docs/screenshots/README.md](doc
 | Source | Status |
 | --- | --- |
 | Demo collector (deterministic, labeled) | ✅ implemented |
+| Local Windows system metrics (CPU, memory, disk, network) | ✅ implemented — manual "Collect now", Windows only |
 | Manual subscription cost tracking | 🟡 schema ready, demo placeholders seeded |
-| Local Windows system metrics | 🔜 planned (Phase 2) |
 | Claude Code local metadata (tokens/models only) | 🔜 planned (Phase 3) |
 | OpenAI / Anthropic official usage & cost APIs | 🔜 planned (Phase 5) |
 | Gemini API via Google Cloud | 🔜 planned |
@@ -42,9 +42,15 @@ _Screenshots have not been captured yet — see [docs/screenshots/README.md](doc
 
 Full truthful matrix: [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md).
 
+### What the Windows system collector reads — and never reads
+
+Collected (aggregate totals only): CPU utilization % and logical core count, memory used/free/total bytes, capacity of the volume hosting the app, and summed network throughput across active interfaces. Collection is **manual** (one measurement per click — no background monitoring), needs **no administrator rights**, and nothing leaves your machine.
+
+Never collected: files, file names, directory listings, processes, window titles, adapter names, MAC/IP addresses, Wi-Fi names, usernames, hostname, serial numbers, or any machine-identifying value. Raw command output is validated and discarded — never stored.
+
 ## Current limitations
 
-- All displayed AI usage, cost, and machine metrics are **demo data**, generated locally and labeled as such.
+- All displayed **AI usage and cost** metrics are **demo data**, generated locally and labeled as such. System metrics are real only on Windows after you click "Collect now".
 - **No official ChatGPT or Claude subscription quota API is integrated** — none exists. Those capabilities are permanently marked `unsupported`; subscription fees are tracked manually.
 - Single display currency, no live conversion.
 - Single-user, local machine only. Do not expose the server to untrusted networks.
@@ -159,4 +165,6 @@ Questions, bugs, and proposals: see [SUPPORT.md](SUPPORT.md). This is an early-s
 | `EPERM` / file-in-use errors on Windows | Close any running `npm run dev` terminal and try again |
 | "Something went wrong" page in the browser | The database may be missing — run `npx prisma migrate dev` |
 | Port 3000 already in use | Run `npm run dev -- -p 3001` and open http://localhost:3001 |
+| System page shows "Unavailable" for network | The one-shot probe could not read throughput counters (e.g. PowerShell unavailable or timed out). CPU/memory/disk still work; try collecting again |
+| System page shows "unsupported" | Real system collection currently works on Windows only |
 | Want a fresh start | Delete `prisma/dev.db`, then run `npx prisma migrate dev` again |
