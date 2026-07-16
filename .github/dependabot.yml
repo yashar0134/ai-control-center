@@ -7,11 +7,17 @@ updates:
       day: "monday"
     open-pull-requests-limit: 5
     groups:
-      # Group minor/patch bumps into one low-noise PR; majors stay separate.
+      # Group minor/patch bumps into one low-noise PR.
       minor-and-patch:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Pre-1.0 policy (PROJECT_RULES.md): major upgrades are dedicated,
+      # tested migration tasks — never automatic Dependabot PRs.
+      # Minor/patch security updates still flow normally.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

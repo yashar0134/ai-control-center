@@ -15,6 +15,7 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "packageManager": "npm@11.6.2",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -25,7 +26,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "validate": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "validate": "npm run db:generate && npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

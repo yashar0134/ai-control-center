@@ -48,6 +48,13 @@ Compact, operational rules for every contributor and every AI coding session. If
 24. Branches: `feature/*`, `fix/*`, `docs/*`. One focused change per PR. Issue-first for large changes.
 25. `npm run validate` (lint + typecheck + tests + build) must pass before review.
 
+## Dependencies
+
+- Never run forced audit fixes (`npm audit fix --force`) or blanket forced updates.
+- Major dependency upgrades are dedicated, tested migration tasks — never drive-by bumps or auto-merged bot PRs.
+- `package-lock.json` must pass a clean `npm ci` on CI (Linux) and locally; regenerate it from a clean state if platform-specific optional entries go missing.
+- Dependency PRs must pass full validation before merge.
+
 ## Documentation
 
 26. Docs change in the same PR as the behavior: `README.md` (user-facing), `docs/ARCHITECTURE.md` (structure), `docs/DATA-SOURCES.md` (source truth matrix), `docs/DECISIONS.md` (significant decisions), `CHANGELOG.md` (`[Unreleased]`).

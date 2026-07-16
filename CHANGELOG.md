@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `package-lock.json` regenerated from a clean state so `npm ci` works on Linux CI as well as Windows (previously missing cross-platform optional dependency entries such as `@emnapi/*`)
+
+### Changed
+
+- `npm run validate` now generates the Prisma client first, so it works directly after a fresh `npm ci`
+- Pinned the package manager (`packageManager: npm@11`) and stopped Dependabot from auto-opening major-version npm upgrade PRs (majors are dedicated migration tasks pre-1.0)
+
 Initial foundation, prepared as the upcoming `0.1.0` first release (not yet published).
 
 ### Added
