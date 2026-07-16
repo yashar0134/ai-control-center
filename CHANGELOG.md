@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Real Windows system collector** (`windows-system`): one-shot, unprivileged measurement of CPU utilization (sampled CPU-time deltas), memory, disk capacity of the app's volume (`fs.statfs`), and aggregate network throughput (fixed, validated PowerShell counter probe) — stored as `locally-observed` health snapshots with CollectorRun + audit trail
+- System page: "Collect now" action, per-tile source labels (locally observed / stale / unavailable / unsupported / demo), 2-minute stale marking, collector status card, truthful unsupported state on non-Windows, and a separately labeled demo-snapshot section
+- Safe collector error categories (timeout, command-unavailable, malformed-output, …) — raw command output and stack traces are never persisted or shown
+- In-process duplicate-run gate for all collectors (in-flight lock + 5 s cooldown)
+
 ### Fixed
 
 - `package-lock.json` regenerated from a clean state so `npm ci` works on Linux CI as well as Windows (previously missing cross-platform optional dependency entries such as `@emnapi/*`)

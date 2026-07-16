@@ -10,6 +10,8 @@ import {
   normalizeUsageObservation,
 } from "@/server/collectors/normalize";
 import type { CollectorContext, Observation } from "@/server/collectors/contracts";
+import { toCollectorError } from "@/server/collectors/errors";
+import { RunGate } from "@/server/collectors/run-gate";
 import { toLocalDateKey } from "@/server/domain/costs";
 import { getSettings } from "./settings-service";
 
@@ -20,6 +22,13 @@ export interface RunCollectorSummary {
   skipped: number;
   message: string;
 }
+
+/**
+ * In-process gate: one run per collector at a time, plus a short cooldown to
+ * stop double-click duplicates. Local single-process app — not a distributed lock.
+ */
+export const COLLECTOR_COOLDOWN_MS = 5000;
+const runGate = new RunGate(COLLECTOR_COOLDOWN_MS);
 
 /**
  * Run a collector end-to-end: collect → validate/normalize → de-duplicate →
@@ -47,7 +56,22 @@ export async function runCollector(
       collectorId,
       written: 0,
       skipped: 0,
-      message: "Local data collection is disabled in Settings.",
+      message:
+        "Local data collection is disabled. Enable it in Settings to collect.",
+    };
+  }
+
+  const gate = runGate.tryAcquire(collector.id);
+  if (!gate.ok) {
+    return {
+      ok: false,
+      collectorId,
+      written: 0,
+      skipped: 0,
+      message:
+        gate.reason === "in-flight"
+          ? "A collection is already running. Please wait for it to finish."
+          : "Collected a moment ago. Please wait a few seconds before collecting again.",
     };
   }
 
@@ -115,30 +139,42 @@ export async function runCollector(
       skipped,
       message:
         written === 0
-          ? "Nothing new to write — today's demo data already exists (duplicate protection)."
-          : `Wrote ${written} demo observation${written === 1 ? "" : "s"}, skipped ${skipped} duplicate${skipped === 1 ? "" : "s"}.`,
+          ? "Nothing new to write — these observations already exist (duplicate protection)."
+          : `Wrote ${written} observation${written === 1 ? "" : "s"}, skipped ${skipped} duplicate${skipped === 1 ? "" : "s"}.`,
     };
   } catch (error) {
-    // Record the failure without leaking internals to the UI.
-    const message = error instanceof Error ? error.message : "Unknown error";
-    await db.collectorRun
-      .create({
-        data: {
-          collectorId: collector.id,
-          startedAt,
-          finishedAt: new Date(),
-          status: "failed",
-          message: message.slice(0, 500),
-        },
-      })
+    // Classify into a safe category; never persist or show raw errors.
+    const safe = toCollectorError(error);
+    await db
+      .$transaction([
+        db.collectorRun.create({
+          data: {
+            collectorId: collector.id,
+            startedAt,
+            finishedAt: new Date(),
+            status: "failed",
+            message: `${safe.category}: ${safe.safeMessage}`,
+          },
+        }),
+        db.auditEvent.create({
+          data: {
+            actor,
+            action: "collector.run",
+            subject: collector.id,
+            detailsJson: JSON.stringify({ outcome: "failed", category: safe.category }),
+          },
+        }),
+      ])
       .catch(() => undefined);
     return {
       ok: false,
       collectorId,
       written: 0,
       skipped: 0,
-      message: "Collector run failed. Details were recorded in the collector log.",
+      message: safe.safeMessage,
     };
+  } finally {
+    runGate.release(collector.id);
   }
 }
 
