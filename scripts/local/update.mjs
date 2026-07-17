@@ -32,11 +32,11 @@ if (state && isProcessAlive(state.pid)) {
 
 function run(title, command, args, { rollbackHint } = {}) {
   log(`\n▶ ${title}`);
-  const result = spawnSync(command, args, {
-    cwd: root,
-    stdio: "inherit",
-    shell: isWindows,
-  });
+  // Fixed internal commands only; on Windows the shell is required for
+  // npm/npx (.cmd files) and the command line is joined from fixed literals.
+  const result = isWindows
+    ? spawnSync([command, ...args].join(" "), { cwd: root, stdio: "inherit", shell: true })
+    : spawnSync(command, args, { cwd: root, stdio: "inherit" });
   if (result.status !== 0) {
     if (rollbackHint) log(rollbackHint);
     fail(`Step failed: ${title}.`);
@@ -79,6 +79,8 @@ To restore the backup (only if needed):
 
 run("Applying database updates", "npx", ["prisma", "migrate", "deploy"], { rollbackHint });
 run("Generating the database client", "npx", ["prisma", "generate"]);
+// Keep connection/capability truth in sync with this version (user data untouched).
+run("Syncing connection metadata", "npm", ["run", "db:sync"], { rollbackHint });
 run("Rebuilding the app", "npm", ["run", "build"]);
 
 log(`

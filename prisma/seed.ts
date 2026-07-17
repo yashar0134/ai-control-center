@@ -9,10 +9,7 @@
  * the UI. Nothing here reads real accounts, machines, or networks.
  */
 import { PrismaClient } from "@prisma/client";
-import {
-  PROVIDER_REGISTRY,
-  INITIAL_CONNECTION_STATUS,
-} from "../src/server/providers/registry";
+import { ensureDefaultSettings, syncRegistry } from "./sync";
 import {
   generateDemoObservationsForConnection,
   generateDemoHealth,
@@ -30,77 +27,8 @@ import {
 } from "../src/server/collectors/normalize";
 import type { Observation } from "../src/server/collectors/contracts";
 import { toLocalDateKey } from "../src/server/domain/costs";
-import { DEFAULT_SETTINGS } from "../src/server/services/settings-service";
 
 const db = new PrismaClient();
-
-async function seedProvidersAndConnections() {
-  for (const provider of PROVIDER_REGISTRY) {
-    await db.provider.upsert({
-      where: { id: provider.providerId },
-      update: { name: provider.providerName, category: provider.category },
-      create: {
-        id: provider.providerId,
-        name: provider.providerName,
-        category: provider.category,
-        websiteUrl: provider.websiteUrl,
-      },
-    });
-    for (const conn of provider.connections) {
-      const status = INITIAL_CONNECTION_STATUS[conn.connectionId] ?? "planned";
-      await db.connection.upsert({
-        where: { id: conn.connectionId },
-        update: {
-          name: conn.name,
-          kind: conn.kind,
-          // Status reflects registry truth (e.g. claude-code became a real
-          // local collector in Phase 3A); statuses are not user-editable.
-          status,
-          collectionMethod: conn.collectionMethod,
-          privacyNotes: conn.privacyNotes,
-        },
-        create: {
-          id: conn.connectionId,
-          providerId: provider.providerId,
-          name: conn.name,
-          kind: conn.kind,
-          status,
-          collectionMethod: conn.collectionMethod,
-          privacyNotes: conn.privacyNotes,
-        },
-      });
-      for (const cap of conn.capabilities) {
-        await db.capability.upsert({
-          where: {
-            connectionId_capability: {
-              connectionId: conn.connectionId,
-              capability: cap.capability,
-            },
-          },
-          update: { state: cap.state, note: cap.note ?? null },
-          create: {
-            connectionId: conn.connectionId,
-            capability: cap.capability,
-            state: cap.state,
-            note: cap.note ?? null,
-          },
-        });
-      }
-    }
-  }
-}
-
-async function seedSettings() {
-  // Create missing keys only — never overwrite user changes on reseed.
-  const existing = new Set((await db.appSetting.findMany()).map((s) => s.key));
-  for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
-    if (!existing.has(key)) {
-      await db.appSetting.create({
-        data: { key, value: JSON.stringify(value) },
-      });
-    }
-  }
-}
 
 async function seedManualSubscriptionCosts(now: Date) {
   // Demo placeholder fees for the two subscriptions, three months back.
@@ -189,8 +117,8 @@ async function seedDemoHistory(now: Date) {
 
 async function main() {
   const now = new Date();
-  await seedProvidersAndConnections();
-  await seedSettings();
+  await syncRegistry(db);
+  await ensureDefaultSettings(db);
   await seedManualSubscriptionCosts(now);
   const { written, skipped } = await seedDemoHistory(now);
 

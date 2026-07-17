@@ -21,12 +21,12 @@ const isWindows = process.platform === "win32";
 
 function run(title, command, args) {
   log(`\n▶ ${title}`);
-  // Fixed internal commands only — nothing here is user-supplied.
-  const result = spawnSync(command, args, {
-    cwd: root,
-    stdio: "inherit",
-    shell: isWindows, // npm/npx are .cmd files on Windows
-  });
+  // Fixed internal commands only — nothing here is user-supplied. On Windows,
+  // npm/npx are .cmd files, which require a shell; the command line is joined
+  // from these fixed literals (never from user input).
+  const result = isWindows
+    ? spawnSync([command, ...args].join(" "), { cwd: root, stdio: "inherit", shell: true })
+    : spawnSync(command, args, { cwd: root, stdio: "inherit" });
   if (result.status !== 0) {
     fail(`Step failed: ${title}. Fix the error above and run "npm run setup:local" again.`);
   }
@@ -55,6 +55,8 @@ log(dbExistedBefore
 
 run("Preparing the database", "npx", ["prisma", "migrate", "deploy"]);
 run("Generating the database client", "npx", ["prisma", "generate"]);
+// Keep connection/capability truth in sync with this version (user data untouched).
+run("Syncing connection metadata", "npm", ["run", "db:sync"]);
 
 if (decideSeed(dbExistedBefore)) {
   run("Adding labeled demo data to the new database", "npm", ["run", "db:seed"]);

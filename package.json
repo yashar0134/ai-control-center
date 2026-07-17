@@ -26,6 +26,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
+    "db:sync": "tsx prisma/sync-run.ts",
     "setup:local": "node scripts/local/setup.mjs",
     "app:start": "node scripts/local/start.mjs",
     "app:stop": "node scripts/local/stop.mjs",
