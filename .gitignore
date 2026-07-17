@@ -48,6 +48,12 @@ prisma/dev.db-wal
 *.sqlite
 *.sqlite3
 
+# local database backups made by "npm run app:update" (never commit local data)
+prisma/backups/
+
+# local runtime state written by "npm run app:start" (PID/port/log)
+.local-run/
+
 # local AI-tooling settings (never publish)
 .claude/
 
