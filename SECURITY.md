@@ -35,6 +35,7 @@ Report privately via **GitHub's private vulnerability reporting**: on the reposi
 - Server actions accepting unvalidated input with side effects
 - A dependency vulnerability that is actually reachable in this app
 - Paths by which secrets or content payloads (prompts, file contents) could be persisted, contrary to the privacy rules
+- Any way for local-source parsing (e.g. the Claude Code session-record parser) to let prompt/response text, file paths, or identifiers survive into the database, logs, or UI — or to read files outside its allowlisted source
 
 ## Scope and threat model (current)
 
@@ -43,6 +44,8 @@ The app runs **entirely on the user's machine**: local Next.js server, local SQL
 1. the locally stored metadata (usage/cost history),
 2. the guarantee that nothing leaves the machine,
 3. the guarantee that no content payloads (prompts, code, file names) are ever collected.
+
+Local files read by collectors (currently Claude Code's session records) are treated as **untrusted input**: they are streamed under size/record caps, parsed defensively, projected to an approved metadata field list, and never persisted or displayed raw. Escapes from that boundary are in-scope security bugs.
 
 Out of scope today: multi-user isolation, network hardening of the dev server (it is intended for `localhost` use only — do not expose it to untrusted networks), and denial-of-service against a local process.
 
