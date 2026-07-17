@@ -2,9 +2,10 @@
 
 **A local-first, open-source control center for monitoring your AI subscriptions, API usage, costs, and coding-agent activity — with truthful data provenance and zero telemetry.**
 
+[![CI](https://github.com/yashar0134/ai-control-center/actions/workflows/ci.yml/badge.svg)](https://github.com/yashar0134/ai-control-center/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-> **Early-stage notice (pre-1.0):** this is a local-first, pre-production foundation. The collector architecture is real and works end-to-end, but **all AI usage, cost, and machine metrics currently displayed are clearly-labeled demo data**. No real provider integration is connected yet.
+> **Early-stage notice (pre-1.0):** this is a local-first, pre-production foundation. Two things are real today: the collector architecture (end-to-end) and **on-demand Windows system metrics** (`locally-observed`). **All AI usage and cost metrics are still clearly-labeled demo data** — no real AI provider integration is connected yet.
 
 ## What it does today
 
@@ -19,7 +20,13 @@
 
 ## Screenshots
 
-_Screenshots have not been captured yet — see [docs/screenshots/README.md](docs/screenshots/README.md) for the planned set and capture guidelines._
+![Overview dashboard with demo-labeled AI cost and usage metrics, usage trend and cost-by-provider charts, and a data-quality notice](docs/screenshots/overview-dark.png)
+
+![Providers page showing six connections in truthful states — demo data, manual tracking, and not connected — with per-capability badges](docs/screenshots/providers-dark.png)
+
+![System page in screenshot-preview mode showing the layout of CPU, memory, disk, and network tiles with synthetic demo-labeled values](docs/screenshots/system-demo-dark.png)
+
+> The System screenshot uses the built-in **screenshot-preview mode** (synthetic fixture values, every tile labeled "demo") so no contributor's real machine statistics appear in the repository. On a real Windows machine the tiles show your actual values labeled `locally observed`. Capture guidelines: [docs/screenshots/README.md](docs/screenshots/README.md).
 
 ## Core principles
 
