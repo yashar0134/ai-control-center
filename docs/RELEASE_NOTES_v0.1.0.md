@@ -1,7 +1,6 @@
-# AI Control Center v0.1.0 — release notes (draft)
+# AI Control Center v0.1.0
 
-> Draft for the future GitHub Release body. **No release or tag has been
-> published yet**; the date will be set when the release is created.
+**Released: 2026-07-17**
 
 ## Summary
 
@@ -69,7 +68,7 @@ First release — nothing to upgrade from. The SQLite schema is managed by Prism
 
 ## Validation
 
-Lint, strict type-check, 44 unit tests (collector math, idempotency, provenance, unknown-value handling, error mapping), and a production build run on every commit via GitHub Actions on Linux; the release candidate was additionally verified with a clean-clone install on Windows.
+Lint, strict type-check, 44 unit tests (collector math, idempotency, provenance, unknown-value handling, error mapping), and a production build run on every commit via GitHub Actions on Linux; the release was additionally verified with a clean-clone install on Windows.
 
 ## Feedback and contributing
 

@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet — changes land here after v0.1.0 is tagged._
+_Nothing yet._
 
-## [0.1.0] — TBD (release candidate, not yet published)
+## [0.1.0] — 2026-07-17
 
-First public release candidate: the local-first foundation plus the first real
-data source. No GitHub release or tag exists yet.
+First public release: the local-first foundation plus the first real
+data source.
 
 ### Added — real Windows system collector
 
