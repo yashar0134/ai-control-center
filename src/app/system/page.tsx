@@ -13,6 +13,10 @@ import {
 import { getSystemPageData } from "@/server/services/analytics-service";
 import { getSettings } from "@/server/services/settings-service";
 import { windowsSystemCollector } from "@/server/collectors/system/windows-system-collector";
+import {
+  SCREENSHOT_CAPTURED_AT,
+  SCREENSHOT_SYSTEM_METRICS,
+} from "@/server/collectors/system/screenshot-fixtures";
 import { isStale, STALE_AFTER_MS } from "@/server/domain/freshness";
 import { Card, CardTitle, PageHeader } from "@/components/ui/card";
 import { Badge, ProvenanceBadge } from "@/components/ui/badge";
@@ -72,25 +76,49 @@ function MetricTile({
   );
 }
 
-export default async function SystemPage() {
-  const [data, settings] = await Promise.all([getSystemPageData(), getSettings()]);
+export default async function SystemPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [data, settings, params] = await Promise.all([
+    getSystemPageData(),
+    getSettings(),
+    searchParams,
+  ]);
   const { realSnapshot, realMetrics, demoSnapshot, demoMetrics, lastSystemRun, recentRuns } =
     data;
+
+  // Screenshot-preview mode: development builds only, fixed synthetic
+  // fixtures, every tile labeled "demo", nothing measured, nothing written.
+  // Production builds ignore the parameter entirely.
+  const screenshotPreview =
+    process.env.NODE_ENV !== "production" && params.preview === "demo";
 
   // This app runs on the user's own machine, so the server platform IS the
   // machine's platform.
   const isWindows = process.platform === "win32";
   const collectionEnabled = settings.collectionEnabled;
-  const canCollect = isWindows && collectionEnabled;
+  const canCollect = isWindows && collectionEnabled && !screenshotPreview;
 
-  const snapshotIsStale = realSnapshot ? isStale(realSnapshot.capturedAt) : false;
-  const baseState: TileState = !isWindows
-    ? "unsupported"
-    : snapshotIsStale
-      ? "stale"
-      : "observed";
+  const snapshotIsStale =
+    !screenshotPreview && realSnapshot ? isStale(realSnapshot.capturedAt) : false;
+  const baseState: TileState = screenshotPreview
+    ? "demo"
+    : !isWindows
+      ? "unsupported"
+      : snapshotIsStale
+        ? "stale"
+        : "observed";
 
-  const m = realMetrics;
+  const m = screenshotPreview ? SCREENSHOT_SYSTEM_METRICS : realMetrics;
+  const snapshotCapturedAt = screenshotPreview
+    ? SCREENSHOT_CAPTURED_AT
+    : (realSnapshot?.capturedAt ?? null);
+  const snapshotProvenance = screenshotPreview
+    ? "demo"
+    : (realSnapshot?.provenance ?? null);
+  const hasSnapshot = screenshotPreview || (realSnapshot !== null && m !== null);
   const tiles = [
     {
       key: "cpu",
@@ -177,7 +205,25 @@ export default async function SystemPage() {
         }
       />
 
-      {!isWindows && (
+      {screenshotPreview && (
+        <Card className="mb-4">
+          <div className="flex items-start gap-3">
+            <MonitorX size={16} className="mt-0.5 shrink-0 text-demo" aria-hidden="true" />
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">
+                Screenshot preview — synthetic example data (development only).
+              </p>
+              <p className="mt-1">
+                Nothing below was measured on this machine. This mode exists so
+                project documentation can show the layout without exposing real
+                system values.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {!screenshotPreview && !isWindows && (
         <Card className="mb-4">
           <div className="flex items-start gap-3">
             <MonitorX size={16} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
@@ -195,7 +241,7 @@ export default async function SystemPage() {
         </Card>
       )}
 
-      {isWindows && !collectionEnabled && (
+      {!screenshotPreview && isWindows && !collectionEnabled && (
         <Card className="mb-4">
           <div className="flex items-start gap-3">
             <Settings2 size={16} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
@@ -218,7 +264,7 @@ export default async function SystemPage() {
         <h2 id="real-metrics-heading" className="sr-only">
           Real machine metrics
         </h2>
-        {realSnapshot && m ? (
+        {hasSnapshot && m ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
               {tiles.map(({ key, ...tile }) => (
@@ -226,11 +272,12 @@ export default async function SystemPage() {
               ))}
             </div>
             <p className="mt-2 text-xs text-faint-foreground">
-              Measured {formatDateTime(realSnapshot.capturedAt)}
+              {screenshotPreview ? "Example measurement" : "Measured"}{" "}
+              {snapshotCapturedAt ? formatDateTime(snapshotCapturedAt) : "unknown"}
               {m.collectionDurationMs !== undefined &&
                 ` in ${formatDurationMs(m.collectionDurationMs)}`}
               {" · "}one-shot measurement, provenance{" "}
-              <ProvenanceBadge provenance={realSnapshot.provenance} />
+              {snapshotProvenance && <ProvenanceBadge provenance={snapshotProvenance} />}
               {snapshotIsStale &&
                 ` · older than ${Math.round(STALE_AFTER_MS / 60000)} minutes — collect again for current values`}
             </p>

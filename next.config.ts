@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Hide the floating dev-tools indicator (keeps dev-mode screenshots clean;
+  // no effect on production builds).
+  devIndicators: false,
 };
 
 export default nextConfig;

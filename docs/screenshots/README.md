@@ -1,32 +1,43 @@
 # Screenshots
 
-This directory holds the public screenshots referenced by the main README. **No screenshots have been captured yet** — the placeholders below define what to add before (or shortly after) the first public release.
+Public screenshots referenced by the main README. All were captured from the
+seeded demo database at 1280×800 (headless browser, no window chrome, dark
+theme) and contain **no real machine information**.
 
-## Screenshots to capture
+## Current set
 
-| File name | Page | Notes |
+| File | Page | Data shown |
 | --- | --- | --- |
-| `overview-dark.png` | `/` Overview | Default dark theme, seeded demo data visible with demo badges |
-| `providers-dark.png` | `/providers` | Show the different truthful connection states |
-| `connection-detail-dark.png` | `/providers/claude-code` | Capabilities + collector card |
-| `activity-dark.png` | `/activity` | With a filter applied (visible in the URL) |
-| `costs-dark.png` | `/costs` | Totals, trend chart, provider breakdown |
-| `system-dark.png` | `/system` | Demo machine tiles with demo badges visible |
-| `settings-light.png` | `/settings` | Light theme, to show theme support |
-| `mobile-nav.png` | any page ≤ 768px wide | Open mobile navigation menu |
+| `overview-dark.png` | `/` Overview | Seeded demo AI data, demo badges visible |
+| `providers-dark.png` | `/providers` | Truthful connection states (demo / manual / not connected) |
+| `system-demo-dark.png` | `/system?preview=demo` | **Screenshot-preview mode** — synthetic fixtures, every tile labeled demo |
+
+A mobile-navigation screenshot is intentionally not included yet: capturing the
+open menu requires an interactive session, and a closed-menu mobile shot adds
+little value. It can be added later following the rules below.
+
+## Screenshot-preview mode (System page)
+
+The System page shows the contributor's real machine values after a collection,
+which must never be published. `/system?preview=demo` renders the page from
+fixed synthetic fixtures instead
+([`src/server/collectors/system/screenshot-fixtures.ts`](../../src/server/collectors/system/screenshot-fixtures.ts)):
+
+- **development builds only** — production ignores the parameter entirely
+- values are hardcoded constants; the parameter accepts no data
+- a banner and per-tile "demo" badges make the synthetic origin unmistakable
+- nothing is measured and nothing is written to the database
 
 ## Capture requirements (privacy-safe)
 
-1. Use **only the seeded demo database** (`npx prisma migrate dev` on a fresh `prisma/dev.db`) — never a database containing real personal usage or costs.
-2. Capture the browser content area only — no desktop, taskbar, bookmarks, other tabs, or OS user name.
-3. Verify no personal information is visible: no real file paths, account names, or emails (the demo data contains none by design).
-4. Use a standard window width (~1280 px desktop, ~375 px mobile) and PNG format.
-5. Keep file sizes reasonable (< 500 KB each; compress if needed).
+1. Use **only the seeded demo database** for Overview/Providers, and **only preview mode** for System — never a database containing real usage or real machine snapshots.
+2. Capture the page content only — no desktop, taskbar, bookmarks, tabs, OS user name, extensions, or dev overlays (`devIndicators` is disabled in `next.config.ts`).
+3. Standard viewport: 1280×800 desktop (375×812 for future mobile shots), PNG, dark theme.
+4. Recheck every image before committing: no real file paths, account names, emails, IPs, or hostnames may appear.
+5. Keep files reasonably small (< 500 KB) and update the README alt text if content changes meaningfully.
 
-## After adding files
+Example capture command (system Chrome, no extra dependencies):
 
-Update the Screenshots section in the main [README.md](../../README.md) to embed them with descriptive alt text, e.g.:
-
-```markdown
-![Overview dashboard showing demo cost and usage metrics](docs/screenshots/overview-dark.png)
+```
+chrome --headless=new --hide-scrollbars --window-size=1280,800 --virtual-time-budget=12000 --screenshot=docs/screenshots/overview-dark.png http://localhost:3000/
 ```
