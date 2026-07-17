@@ -247,7 +247,6 @@ describe("limits", () => {
     const hangingSource: ClaudeCodeUsageSource = {
       detect: () => new Promise(() => undefined), // never resolves
       listSessionFiles: async () => [],
-      // eslint-disable-next-line require-yield
       readSessionLines: async function* () {
         return;
       },

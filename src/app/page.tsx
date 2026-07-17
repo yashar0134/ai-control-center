@@ -47,7 +47,7 @@ export default async function OverviewPage() {
           label="Active connections"
           value={`${data.activeConnectionCount} / ${data.totalConnectionCount}`}
           badge={<Badge tone="muted">local</Badge>}
-          hint="Connections with demo or manual tracking"
+          hint="Connections with local, demo, or manual tracking"
         />
         <StatCard
           label="Usage events today"

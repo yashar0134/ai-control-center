@@ -117,7 +117,7 @@ export async function getDashboardData(now = new Date()) {
   );
 
   const activeConnections = connections.filter(
-    (c) => c.status === "demo" || c.status === "manual",
+    (c) => c.status === "demo" || c.status === "manual" || c.status === "local",
   );
 
   return {
