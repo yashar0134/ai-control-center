@@ -57,6 +57,7 @@ export type CapabilityDeclaration = z.infer<typeof capabilityDeclarationSchema>;
 export const CONNECTION_STATUSES = [
   "demo",
   "manual",
+  "local",
   "not-connected",
   "planned",
   "unavailable",
@@ -72,6 +73,7 @@ export const COLLECTION_METHODS = [
   "demo-collector",
   "manual-entry",
   "none",
+  "local-file",
   "planned-official-api",
   "planned-local-file",
 ] as const;

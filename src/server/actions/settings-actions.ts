@@ -18,6 +18,7 @@ export async function updateSettingsAction(
     displayCurrency: formData.get("displayCurrency"),
     weekStart: formData.get("weekStart"),
     collectionEnabled: formData.get("collectionEnabled") === "on",
+    claudeCodeImportEnabled: formData.get("claudeCodeImportEnabled") === "on",
     retentionDays: Number(formData.get("retentionDays")),
     anonymizedMetadata: formData.get("anonymizedMetadata") === "on",
     theme: formData.get("theme"),

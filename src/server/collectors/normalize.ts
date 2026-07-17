@@ -29,6 +29,8 @@ const usageObservationSchema = z.object({
   inputTokens: tokenCountSchema,
   outputTokens: tokenCountSchema,
   totalTokens: tokenCountSchema,
+  cacheCreationTokens: tokenCountSchema.optional(),
+  cacheReadTokens: tokenCountSchema.optional(),
   costAmount: z.number().min(0).nullable(),
   costKind: z.enum(["actual", "estimated"]).nullable(),
   provenance: provenanceSchema,
@@ -44,6 +46,8 @@ export interface NormalizedUsageEvent {
   inputTokens: number | null;
   outputTokens: number | null;
   totalTokens: number | null;
+  cacheCreationTokens: number | null;
+  cacheReadTokens: number | null;
   costAmount: number | null;
   costKind: string | null;
   provenance: string;
@@ -61,6 +65,8 @@ export function normalizeUsageObservation(
       parsed.outputTokens,
       parsed.totalTokens,
     ),
+    cacheCreationTokens: parsed.cacheCreationTokens ?? null,
+    cacheReadTokens: parsed.cacheReadTokens ?? null,
   };
 }
 

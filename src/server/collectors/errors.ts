@@ -16,6 +16,11 @@ export const COLLECTOR_ERROR_CATEGORIES = [
   "malformed-output",
   "permission-denied",
   "metric-unavailable",
+  "not-installed",
+  "source-not-found",
+  "unsupported-format",
+  "source-busy",
+  "import-limit-reached",
   "internal-error",
 ] as const;
 
@@ -55,6 +60,12 @@ export function toCollectorError(err: unknown): CollectorError {
       return new CollectorError(
         "timeout",
         "Collection took too long and was stopped.",
+      );
+    }
+    if (e.code === "EBUSY") {
+      return new CollectorError(
+        "source-busy",
+        "The local data source is busy. Please try again in a moment.",
       );
     }
     if (e.code === "EACCES" || e.code === "EPERM") {

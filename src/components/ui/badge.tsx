@@ -58,6 +58,7 @@ export function ConnectionStatusBadge({ status }: { status: string }) {
   const labelMap: Record<string, { label: string; tone: BadgeTone }> = {
     demo: { label: "demo data", tone: "demo" },
     manual: { label: "manual tracking", tone: "info" },
+    local: { label: "local data", tone: "success" },
     "not-connected": { label: "not connected", tone: "muted" },
     planned: { label: "planned", tone: "muted" },
     unavailable: { label: "unavailable", tone: "warning" },

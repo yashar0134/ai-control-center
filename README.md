@@ -5,12 +5,13 @@
 [![CI](https://github.com/yashar0134/ai-control-center/actions/workflows/ci.yml/badge.svg)](https://github.com/yashar0134/ai-control-center/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-> **Early-stage notice (pre-1.0):** this is a local-first, pre-production foundation. Two things are real today: the collector architecture (end-to-end) and **on-demand Windows system metrics** (`locally-observed`). **All AI usage and cost metrics are still clearly-labeled demo data** — no real AI provider integration is connected yet.
+> **Early-stage notice (pre-1.0):** this is a local-first, pre-production foundation. Three things are real today: the collector architecture (end-to-end), **on-demand Windows system metrics**, and **Claude Code local usage import** (timestamps, models, token counts — labeled `locally-observed`). **All AI cost values and the OpenAI/Anthropic API usage shown are still clearly-labeled demo data.** Real and demo numbers are never mixed.
 
 ## What it does today
 
 - **Overview dashboard** — month-to-date cost, change vs. previous month, active connections, usage events, collector health, cost-by-provider and usage-trend charts
-- **Providers** — six product connections (ChatGPT subscription, Claude subscription, Claude Code, OpenAI API, Anthropic API, Gemini API) shown in *truthful* states: demo data, manual tracking, or not connected
+- **Providers** — six product connections (ChatGPT subscription, Claude subscription, Claude Code, OpenAI API, Anthropic API, Gemini API) shown in *truthful* states: local data, demo data, manual tracking, or not connected
+- **Claude Code local usage** — click **Import Claude Code usage** on the Claude Code connection page to read *token metadata* from your local Claude Code sessions: real token totals (input/output/cache), top models, a 30-day trend, and import history — all labeled `locally-observed`. Manual import only (nothing runs in the background), duplicate-safe re-imports, and a strict privacy filter (see below)
 - **Connection details** — capabilities, provenance, recent usage and costs, collector status, and privacy notes per connection, fully database-driven
 - **Activity** — normalized usage events with URL-based filters (connection, model, status, provenance)
 - **Costs** — monthly totals split by actual / estimated / manual, provider breakdown, 30-day trend, records table
@@ -41,8 +42,8 @@
 | --- | --- |
 | Demo collector (deterministic, labeled) | ✅ implemented |
 | Local Windows system metrics (CPU, memory, disk, network) | ✅ implemented — manual "Collect now", Windows only |
+| Claude Code local usage metadata (timestamps, models, token counts) | ✅ implemented — manual import, verified on Windows |
 | Manual subscription cost tracking | 🟡 schema ready, demo placeholders seeded |
-| Claude Code local metadata (tokens/models only) | 🔜 planned (Phase 3) |
 | OpenAI / Anthropic official usage & cost APIs | 🔜 planned (Phase 5) |
 | Gemini API via Google Cloud | 🔜 planned |
 | ChatGPT / Claude **subscription usage & quotas** | ❌ **not possible** — no official API exists, and this project will never scrape accounts |
@@ -55,9 +56,18 @@ Collected (aggregate totals only): CPU utilization % and logical core count, mem
 
 Never collected: files, file names, directory listings, processes, window titles, adapter names, MAC/IP addresses, Wi-Fi names, usernames, hostname, serial numbers, or any machine-identifying value. Raw command output is validated and discarded — never stored.
 
+### What the Claude Code collector reads — and never reads
+
+**Collected (metadata only):** event timestamps, model identifiers (e.g. the model name a response used), and token counts — input, output, cache-creation, and cache-read — from Claude Code's local session records, plus safe import statistics (files scanned, records parsed/rejected). Every value is labeled `locally-observed`. A content-free, hashed key makes re-imports duplicate-safe.
+
+**Never collected:** prompts, responses, reasoning text, source code, file contents, file names, project or repository names, directory paths, session titles, tool inputs/outputs, usernames, account identity, or credentials. The parser copies only an approved field list out of each record; everything else is discarded unread. Raw session records are never persisted or displayed.
+
+**Not available (and never faked):** Claude subscription quota, remaining allowance, reset schedules, and provider-billed cost are not exposed by any official, verifiable local source — they display as *unavailable*, never as made-up numbers. Cost estimates from token prices are intentionally not implemented yet; your subscription fee stays a manual entry.
+
 ## Current limitations
 
-- All displayed **AI usage and cost** metrics are **demo data**, generated locally and labeled as such. System metrics are real only on Windows after you click "Collect now".
+- **AI cost values** and the OpenAI/Anthropic **API usage** shown are **demo data**, generated locally and labeled as such. Real data today: Claude Code usage after you import it, and Windows system metrics after you click "Collect now".
+- Claude Code import is **manual** — click the import button to pick up new sessions; the page shows when data was last imported.
 - **No official ChatGPT or Claude subscription quota API is integrated** — none exists. Those capabilities are permanently marked `unsupported`; subscription fees are tracked manually.
 - Single display currency, no live conversion.
 - Single-user, local machine only. Do not expose the server to untrusted networks.
@@ -73,7 +83,7 @@ Next.js (App Router) · React · TypeScript (strict) · Tailwind CSS · Prisma 6
 
 Works on Windows, macOS, and Linux. All commands below are identical on every platform.
 
-## Quick start
+## Install and use (recommended)
 
 Open a terminal (on Windows: right-click inside a folder → "Open in Terminal") and run each command on its own:
 
@@ -86,22 +96,44 @@ cd ai-control-center
 ```
 
 ```
-npm install
+npm run setup:local
 ```
 
-Expected: ends with `added ... packages` (warnings are OK).
+This one command installs dependencies, prepares the local database (an existing database is **never** overwritten), seeds labeled demo data into a brand-new database only, and creates the production build. Safe to re-run anytime.
+
+```
+npm run app:start
+```
+
+The app starts on **localhost only** (never reachable from the network) and your browser opens automatically. If port 3000 is busy, the next free port is used and printed.
+
+### Everyday commands
+
+| Command | What it does |
+| --- | --- |
+| `npm run app:start` | Starts the app and opens the browser (localhost only) |
+| `npm run app:status` | Shows whether the app is running, on which port, since when |
+| `npm run app:stop` | Stops **only** this app's server process — nothing else |
+| `npm run app:update` | Gets the latest version: **backs up your database first** (to `prisma/backups/`), then updates dependencies, applies migrations, and rebuilds. Your data survives updates; if a migration fails, exact restore steps are printed |
+| `npm run setup:local` | Re-runs setup (safe — never touches existing data) |
+
+**Backups:** every `app:update` copies your database to `prisma/backups/dev-backup-<timestamp>.db` before changing anything. To back up manually, just copy `prisma/dev.db` somewhere safe while the app is stopped; to restore, copy it back.
+
+## Development mode (for contributors)
+
+```
+npm install
+```
 
 ```
 npx prisma migrate dev
 ```
 
-Expected: `Your database is now in sync with your schema`, then a seed message. This creates the local database `prisma/dev.db` and fills it with labeled demo data.
-
 ```
 npm run dev
 ```
 
-Then open **http://localhost:3000** in your browser. Stop with `Ctrl + C`.
+Then open **http://localhost:3000**. Stop with `Ctrl + C`.
 
 ## Database commands
 
@@ -125,12 +157,13 @@ Runs lint → type-check → unit tests → production build. Individual command
 
 ```
 prisma/            database schema, migrations, demo seed
+scripts/local/     beginner-friendly setup / start / stop / status / update scripts
 src/app/           routes (Server Components)
 src/components/    presentational components (shell, ui, charts, forms)
 src/lib/           formatting helpers
 src/server/
   domain/          core types: provenance, capabilities, cost aggregation
-  collectors/      collector contracts, demo collector, dedupe, normalize
+  collectors/      collector contracts, demo/system/claude-code collectors, dedupe, normalize
   providers/       typed registry of provider/connection metadata
   db/              Prisma client
   services/        application services (collector runs, analytics, settings)
@@ -174,4 +207,8 @@ Questions, bugs, and proposals: see [SUPPORT.md](SUPPORT.md). This is an early-s
 | Port 3000 already in use | Run `npm run dev -- -p 3001` and open http://localhost:3001 |
 | System page shows "Unavailable" for network | The one-shot probe could not read throughput counters (e.g. PowerShell unavailable or timed out). CPU/memory/disk still work; try collecting again |
 | System page shows "unsupported" | Real system collection currently works on Windows only |
+| Claude Code shows "not detected" | Claude Code is not installed on this machine, or it has never been used, so its local data folder does not exist yet |
+| Claude Code import writes 0 events | If "skipped" is high, everything was already imported (that is duplicate protection working). If session files are 0, use Claude Code once and import again |
+| "The app is already running" | Run `npm run app:status`; stop it with `npm run app:stop` before starting again |
+| Ports 3000–3009 all in use | Start with a different range: `PORT=4000 npm run app:start` |
 | Want a fresh start | Delete `prisma/dev.db`, then run `npx prisma migrate dev` again |

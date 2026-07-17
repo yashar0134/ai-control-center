@@ -69,14 +69,9 @@ export const DEMO_PROFILES: DemoConnectionProfile[] = [
     minEvents: 4,
     maxEvents: 10,
   },
-  {
-    connectionId: "claude-code",
-    eventType: "coding-session",
-    models: ["claude-opus-4-8", "claude-sonnet-5"],
-    demoRatePer1k: 0.014,
-    minEvents: 2,
-    maxEvents: 6,
-  },
+  // claude-code is intentionally NOT demo-profiled anymore: it has a real
+  // local collector since Phase 3A, and demo data must never mix with real
+  // locally-observed usage on the same connection.
 ];
 
 function dateAt(targetDate: string, hour: number, minute: number): Date {

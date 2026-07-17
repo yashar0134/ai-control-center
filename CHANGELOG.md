@@ -7,12 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet — changes land here after v0.1.0 is tagged._
+### Added — Claude Code local usage collector
 
-## [0.1.0] — TBD (release candidate, not yet published)
+- **Claude Code local usage collector** (`claude-code-local`): manual import of usage *metadata* — event timestamps, model identifiers, and input/output/cache-creation/cache-read token counts — from local Claude Code session records, stored as `locally-observed` usage events with a CollectorRun + audit trail
+- Strict privacy filter: an approved-field projection parser; prompts, responses, source code, file/project names, and paths are structurally excluded and proven excluded by tests; raw records are never persisted; dedupe keys are content-free SHA-256 hashes
+- Duplicate-safe incremental import: re-importing writes zero duplicates; newly appended sessions are picked up by a bounded re-scan; per-run caps on files, bytes, and records plus a hard timeout
+- Claude Code connection page: import action, source detection, token totals with cache breakdown, top models, 30-day daily trend, import history, and a privacy summary — all real numbers exclude demo data
+- Overview: real Claude Code usage shown as a separate `locally-observed` stat; demo-labeled tiles now contain demo data only; truthful data-quality panel
+- Settings: dedicated enable/disable switch for the Claude Code import
+- New safe collector error categories (`not-installed`, `source-not-found`, `unsupported-format`, `source-busy`, `import-limit-reached`)
+- Additive database migration: separate cache-creation/cache-read token columns on usage events (unknown stays `NULL`)
 
-First public release candidate: the local-first foundation plus the first real
-data source. No GitHub release or tag exists yet.
+### Added — local installation and everyday use
+
+- `npm run setup:local` — one-command install: dependencies, database (never overwrites an existing one), demo seed only into a brand-new database, production build; idempotent
+- `npm run app:start` / `app:stop` / `app:status` — production server bound to **localhost only**, automatic free-port selection, safe PID handling (stop signals only the recorded PID, never other processes), browser auto-open
+- `npm run app:update` — fast-forward update that **backs up the SQLite database to `prisma/backups/` before any migration** and prints exact restore steps if a migration fails; user data is never deleted
+
+### Changed
+
+- The demo collector no longer generates demo data for the Claude Code connection (it has a real collector now); existing demo rows stay labeled `demo` and are excluded from all real totals
+
+_Not yet released; no tag exists for these changes._
+
+## [0.1.0] — 2026-07-17
+
+First public release: the local-first foundation plus the first real
+data source.
 
 ### Added — real Windows system collector
 

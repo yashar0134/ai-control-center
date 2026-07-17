@@ -10,9 +10,9 @@ Compact phases. Each phase ships independently; no phase starts before the previ
 - **Entry:** Phase 1 complete. ✅
 - **Exit:** a collector reads unprivileged OS counters (CPU, memory, disk, network) on a manual trigger ✅; snapshots carry provenance `locally-observed` ✅; System page shows real + demo clearly distinguished ✅; collection respects the Settings toggle ✅; unit tests for the collector's normalization ✅. (Scheduled background sampling was intentionally not included — collection is manual per click.)
 
-## Phase 3 — Claude Code local metadata collector
-- **Entry:** Phase 2 collector pattern proven.
-- **Exit:** local-file collector reads Claude Code usage metadata (timestamps, models, token counts only); events land as `locally-observed`; estimated costs marked `estimated`; explicit tests proving no content payloads are ever stored.
+## Phase 3A — Claude Code local metadata collector + usable local installation ✅
+- **Entry:** Phase 2 collector pattern proven. ✅
+- **Exit:** local-file collector reads Claude Code usage metadata (timestamps, models, token counts only) ✅; events land as `locally-observed` ✅; explicit tests proving no content payloads are ever stored ✅; duplicate-safe incremental manual import ✅; beginner-friendly local production workflow (`setup:local`, `app:start/stop/status/update` with pre-migration DB backup) ✅. (Estimated API-equivalent cost was intentionally **not** implemented — no pricing could be verified as current; it remains a candidate for a later phase with a versioned, documented pricing table. Background/scheduled import is also deferred.)
 
 ## Phase 4 — Codex local metadata collector
 - **Entry:** Phase 3 shipped; Codex local metadata format assessed.

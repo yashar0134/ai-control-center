@@ -4,6 +4,12 @@ import {
   type SystemMetrics,
 } from "@/server/collectors/system/metrics";
 import {
+  CLAUDE_CODE_COLLECTOR_ID,
+  CLAUDE_CODE_CONNECTION_ID,
+} from "@/server/collectors/claude-code/claude-code-collector";
+import { realClaudeCodeSource } from "@/server/collectors/claude-code/real-source";
+import { summarizeClaudeCodeUsage } from "@/server/domain/claude-usage";
+import {
   aggregateCosts,
   costsByDay,
   percentChange,
@@ -34,7 +40,7 @@ export async function getDashboardData(now = new Date()) {
   const todayStart = startOfDay(now);
   const trendStart = daysAgo(now, 13);
 
-  const [monthCosts, prevMonthCosts, connections, eventsToday, trendEvents, recentEvents, lastRun] =
+  const [monthCosts, prevMonthCosts, connections, eventsToday, trendEvents, recentEvents, lastRun, realClaude] =
     await Promise.all([
       db.costRecord.findMany({
         where: { periodStart: { gte: monthStart } },
@@ -45,9 +51,13 @@ export async function getDashboardData(now = new Date()) {
         include: { connection: { select: { providerId: true } } },
       }),
       db.connection.findMany({ include: { provider: true } }),
-      db.usageEvent.count({ where: { occurredAt: { gte: todayStart } } }),
+      // Demo-labeled tiles stay demo-only; real locally-observed usage is
+      // reported separately below and never blended into demo numbers.
+      db.usageEvent.count({
+        where: { occurredAt: { gte: todayStart }, provenance: "demo" },
+      }),
       db.usageEvent.findMany({
-        where: { occurredAt: { gte: trendStart } },
+        where: { occurredAt: { gte: trendStart }, provenance: "demo" },
         select: { occurredAt: true, totalTokens: true },
       }),
       db.usageEvent.findMany({
@@ -58,6 +68,17 @@ export async function getDashboardData(now = new Date()) {
         },
       }),
       db.collectorRun.findFirst({ orderBy: { startedAt: "desc" } }),
+      // Real (locally-observed) Claude Code usage — always reported separately
+      // from demo totals, never blended.
+      db.usageEvent.aggregate({
+        where: {
+          connectionId: CLAUDE_CODE_CONNECTION_ID,
+          provenance: "locally-observed",
+        },
+        _count: { _all: true },
+        _sum: { totalTokens: true },
+        _max: { occurredAt: true },
+      }),
     ]);
 
   const monthTotals = aggregateCosts(
@@ -96,7 +117,7 @@ export async function getDashboardData(now = new Date()) {
   );
 
   const activeConnections = connections.filter(
-    (c) => c.status === "demo" || c.status === "manual",
+    (c) => c.status === "demo" || c.status === "manual" || c.status === "local",
   );
 
   return {
@@ -116,6 +137,11 @@ export async function getDashboardData(now = new Date()) {
     ),
     recentEvents,
     lastRun,
+    realClaudeUsage: {
+      eventCount: realClaude._count._all,
+      totalTokens: realClaude._sum.totalTokens,
+      lastEventAt: realClaude._max.occurredAt,
+    },
   };
 }
 
@@ -223,6 +249,73 @@ export async function getCostsPageData(now = new Date()) {
     })),
     dailyTrend,
     records,
+  };
+}
+
+/**
+ * Claude Code detail-page data: real (locally-observed) usage only, plus
+ * source detection and import-run history. Demo rows are excluded from every
+ * total here; where legacy demo events exist they are surfaced separately.
+ */
+export async function getClaudeCodePageData(now = new Date()) {
+  const [events, demoEventCount, lastRun, recentRuns, latestHealth] =
+    await Promise.all([
+      db.usageEvent.findMany({
+        where: {
+          connectionId: CLAUDE_CODE_CONNECTION_ID,
+          provenance: "locally-observed",
+        },
+        select: {
+          occurredAt: true,
+          model: true,
+          inputTokens: true,
+          outputTokens: true,
+          totalTokens: true,
+          cacheCreationTokens: true,
+          cacheReadTokens: true,
+          provenance: true,
+        },
+      }),
+      db.usageEvent.count({
+        where: {
+          connectionId: CLAUDE_CODE_CONNECTION_ID,
+          provenance: { not: "locally-observed" },
+        },
+      }),
+      db.collectorRun.findFirst({
+        where: { collectorId: CLAUDE_CODE_COLLECTOR_ID },
+        orderBy: { startedAt: "desc" },
+      }),
+      db.collectorRun.findMany({
+        where: { collectorId: CLAUDE_CODE_COLLECTOR_ID },
+        orderBy: { startedAt: "desc" },
+        take: 5,
+      }),
+      db.healthSnapshot.findFirst({
+        where: {
+          subjectType: "connection",
+          subjectId: CLAUDE_CODE_CONNECTION_ID,
+          provenance: "locally-observed",
+        },
+        orderBy: { capturedAt: "desc" },
+      }),
+    ]);
+
+  // Safe filesystem detection (existence + counts only — no file contents).
+  let detection = { dataDirFound: false, sessionFileCount: 0 };
+  try {
+    detection = await realClaudeCodeSource.detect();
+  } catch {
+    // Detection failure is reported as "not detected", never as an error page.
+  }
+
+  return {
+    summary: summarizeClaudeCodeUsage(events, now),
+    demoEventCount,
+    lastRun,
+    recentRuns,
+    latestHealth,
+    detection,
   };
 }
 

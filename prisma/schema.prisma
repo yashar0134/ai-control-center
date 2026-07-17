@@ -68,7 +68,9 @@ model UsageEvent {
   status       String // "ok" | "error" | "unknown"
   inputTokens  Int? // NULL = unknown
   outputTokens Int? // NULL = unknown
-  totalTokens  Int? // NULL = unknown
+  totalTokens  Int? // NULL = unknown (input + output; cache tokens tracked separately)
+  cacheCreationTokens Int? // NULL = unknown; prompt-cache write tokens
+  cacheReadTokens     Int? // NULL = unknown; prompt-cache read tokens
   costAmount   Float? // NULL = unknown; display currency
   costKind     String? // "actual" | "estimated"
   provenance   String // "live" | "locally-observed" | "manual" | "estimated" | "demo" | "stale"
