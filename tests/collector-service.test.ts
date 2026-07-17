@@ -29,7 +29,7 @@ const { dbMock, settingsState } = vi.hoisted(() => ({
       Promise.all(ops as Promise<unknown>[]),
     ),
   },
-  settingsState: { collectionEnabled: true },
+  settingsState: { collectionEnabled: true, claudeCodeImportEnabled: true },
 }));
 
 vi.mock("@/server/db/client", () => ({ db: dbMock }));
@@ -38,6 +38,7 @@ vi.mock("@/server/services/settings-service", () => ({
     displayCurrency: "USD",
     weekStart: "monday",
     collectionEnabled: settingsState.collectionEnabled,
+    claudeCodeImportEnabled: settingsState.claudeCodeImportEnabled,
     retentionDays: 90,
     anonymizedMetadata: true,
     theme: "dark",
@@ -91,6 +92,16 @@ vi.mock("@/server/collectors/registry", () => {
           releaseSlow = () => resolve({ observations: [], notes: [] });
         }),
     },
+    {
+      id: "fake-claude",
+      name: "Fake Claude import",
+      description: "",
+      method: "local-file",
+      connectionIds: [],
+      enabledSettingKey: "claudeCodeImportEnabled",
+      privacyNotes: "",
+      collect: async () => ({ observations: [healthObservation], notes: [] }),
+    },
   ];
   return {
     listCollectors: () => collectors,
@@ -103,6 +114,7 @@ import { runCollector } from "@/server/services/collector-service";
 beforeEach(() => {
   vi.clearAllMocks();
   settingsState.collectionEnabled = true;
+  settingsState.claudeCodeImportEnabled = true;
 });
 
 describe("collection-disabled behavior", () => {
@@ -114,6 +126,18 @@ describe("collection-disabled behavior", () => {
     expect(dbMock.$transaction).not.toHaveBeenCalled();
     expect(dbMock.healthSnapshot.create).not.toHaveBeenCalled();
     expect(dbMock.collectorRun.create).not.toHaveBeenCalled();
+  });
+
+  it("blocks a collector whose own enable setting is off until it is re-enabled", async () => {
+    settingsState.claudeCodeImportEnabled = false;
+    const blocked = await runCollector("fake-claude", "user");
+    expect(blocked.ok).toBe(false);
+    expect(blocked.message).toContain("Settings");
+    expect(dbMock.$transaction).not.toHaveBeenCalled();
+
+    settingsState.claudeCodeImportEnabled = true;
+    const allowed = await runCollector("fake-claude", "user");
+    expect(allowed.ok).toBe(true);
   });
 });
 

@@ -3,6 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { getConnectionDetail } from "@/server/services/connections-service";
+import { getClaudeCodePageData } from "@/server/services/analytics-service";
+import { getSettings } from "@/server/services/settings-service";
+import { CLAUDE_CODE_CONNECTION_ID } from "@/server/collectors/claude-code/claude-code-collector";
+import { ClaudeCodeUsageSection } from "@/components/claude-code/claude-code-usage-section";
 import { Card, CardTitle, PageHeader } from "@/components/ui/card";
 import {
   CapabilityStateBadge,
@@ -33,6 +37,16 @@ export default async function ConnectionDetailPage({
   if (!detail) notFound();
 
   const { connection, usageEvents, costRecords, latestHealth, collector, lastCollectorRun, declaration } = detail;
+
+  const isClaudeCode = connection.id === CLAUDE_CODE_CONNECTION_ID;
+  const [claudeData, settings] = isClaudeCode
+    ? await Promise.all([getClaudeCodePageData(), getSettings()])
+    : [null, null];
+
+  const collectorButtonLabels =
+    collector?.id === "claude-code-local"
+      ? { label: "Import Claude Code usage", pendingLabel: "Importing usage metadata…" }
+      : { label: undefined, pendingLabel: undefined };
 
   const supported = connection.capabilities.filter((c) => SUPPORTED_STATES.has(c.state));
   const notSupported = connection.capabilities.filter((c) => !SUPPORTED_STATES.has(c.state));
@@ -163,7 +177,11 @@ export default async function ConnectionDetailPage({
                   </div>
                 )}
               </dl>
-              <RunCollectorButton collectorId={collector.id} />
+              <RunCollectorButton
+                collectorId={collector.id}
+                label={collectorButtonLabels.label}
+                pendingLabel={collectorButtonLabels.pendingLabel}
+              />
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -179,6 +197,13 @@ export default async function ConnectionDetailPage({
           </div>
         </Card>
       </div>
+
+      {isClaudeCode && claudeData && settings && (
+        <ClaudeCodeUsageSection
+          data={claudeData}
+          importEnabled={settings.collectionEnabled && settings.claudeCodeImportEnabled}
+        />
+      )}
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card>

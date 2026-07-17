@@ -60,6 +60,15 @@ export async function runCollector(
         "Local data collection is disabled. Enable it in Settings to collect.",
     };
   }
+  if (collector.enabledSettingKey && !settings[collector.enabledSettingKey]) {
+    return {
+      ok: false,
+      collectorId,
+      written: 0,
+      skipped: 0,
+      message: "This collector is disabled. Enable it in Settings to import.",
+    };
+  }
 
   const gate = runGate.tryAcquire(collector.id);
   if (!gate.ok) {
@@ -97,9 +106,11 @@ export async function runCollector(
     // this milestone); they are intentionally not persisted.
 
     await db.$transaction([
-      db.usageEvent.createMany({
-        data: usage.map(normalizeUsageObservation),
-      }),
+      // Real imports can carry tens of thousands of rows; chunked createMany
+      // stays inside SQLite's per-statement parameter limit.
+      ...chunk(usage.map(normalizeUsageObservation), 500).map((batch) =>
+        db.usageEvent.createMany({ data: batch }),
+      ),
       db.costRecord.createMany({
         data: costs.map((c) => normalizeCostObservation(c, ctx.currency)),
       }),
@@ -178,6 +189,13 @@ export async function runCollector(
   }
 }
 
+/** Split an array into fixed-size batches (SQLite parameter-limit safety). */
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 /** Look up which observation dedupe keys already exist in the database. */
 async function findExistingKeys(
   observations: Observation[],
@@ -199,10 +217,14 @@ async function findExistingKeys(
 
   const [usage, costs, health] = await Promise.all([
     usageKeys.length
-      ? db.usageEvent.findMany({
-          where: { dedupeKey: { in: usageKeys } },
-          select: { dedupeKey: true },
-        })
+      ? Promise.all(
+          chunk(usageKeys, 500).map((keys) =>
+            db.usageEvent.findMany({
+              where: { dedupeKey: { in: keys } },
+              select: { dedupeKey: true },
+            }),
+          ),
+        ).then((batches) => batches.flat())
       : [],
     costKeys.length
       ? db.costRecord.findMany({

@@ -33,6 +33,9 @@ export interface UsageObservation {
   inputTokens: number | null;
   outputTokens: number | null;
   totalTokens: number | null;
+  /** Prompt-cache token counts (null/omitted = unknown). */
+  cacheCreationTokens?: number | null;
+  cacheReadTokens?: number | null;
   costAmount: number | null;
   costKind: "actual" | "estimated" | null;
   provenance: Provenance;
@@ -120,6 +123,11 @@ export interface Collector {
   requiresElevation?: boolean;
   /** Truthful implementation status. */
   status?: "implemented" | "planned";
+  /**
+   * Optional per-collector enable switch: name of a boolean app setting that
+   * must be true for this collector to run (checked by the collector service).
+   */
+  enabledSettingKey?: "claudeCodeImportEnabled";
   /** Truthful statement of what this collector reads and never reads. */
   privacyNotes: string;
   collect(ctx: CollectorContext): Promise<CollectorResult>;

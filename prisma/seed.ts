@@ -53,6 +53,9 @@ async function seedProvidersAndConnections() {
         update: {
           name: conn.name,
           kind: conn.kind,
+          // Status reflects registry truth (e.g. claude-code became a real
+          // local collector in Phase 3A); statuses are not user-editable.
+          status,
           collectionMethod: conn.collectionMethod,
           privacyNotes: conn.privacyNotes,
         },

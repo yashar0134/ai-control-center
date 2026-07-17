@@ -107,6 +107,22 @@ export function SettingsForm({ settings }: { settings: AppSettings }) {
         <label className="flex items-start gap-3 text-sm">
           <input
             type="checkbox"
+            name="claudeCodeImportEnabled"
+            defaultChecked={settings.claudeCodeImportEnabled}
+            className="mt-0.5 size-4 accent-(--accent)"
+          />
+          <span>
+            Enable Claude Code usage import
+            <span className="block text-xs text-faint-foreground">
+              Manual import of token metadata (timestamps, models, token counts)
+              from local Claude Code sessions. Prompts, responses, file names, and
+              project names are never read. When off, the import action is blocked.
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3 text-sm">
+          <input
+            type="checkbox"
             name="anonymizedMetadata"
             defaultChecked={settings.anonymizedMetadata}
             className="mt-0.5 size-4 accent-(--accent)"
